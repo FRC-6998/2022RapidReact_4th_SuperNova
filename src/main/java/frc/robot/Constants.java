@@ -104,8 +104,8 @@ public final class Constants {
     public static final double SMART_MOTION_MAX_ACCEL_HANG = 1000;
 
     // Auto alignment
-    public static final double AUTO_ALIGNMENT_MOUNT_ANGLE = 27;
-    public static final double AUTO_ALIGNMENT_LENS_HEIGHT_METER = 1.07;
+    public static final double AUTO_ALIGNMENT_MOUNT_ANGLE = 20;
+    public static final double AUTO_ALIGNMENT_LENS_HEIGHT_METER = 1.07; // TODO need measure
     public static final double AUTO_ALIGNMENT_GOAL_HEIGHT_METER = 2.5;
 
     public static final double SHOOT_ROTATE_GEARING = 53.6;
