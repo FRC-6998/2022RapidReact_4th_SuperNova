@@ -143,7 +143,7 @@ public class ShootSubsystem extends SubsystemBase {
     }
 
     public void setShootMotorsVelocity(double distance){
-        double rpm = distance == 0 ? 0 : ((31.381 * distance*distance + 113.69*distance + 2617.2)+(50)) * 2048.0 / 600.0;
+        double rpm = distance == 0 ? 0 : ((31.381 * distance*distance + 113.69*distance + 2617.2)+(250)) * 2048.0 / 600.0;
         shootMotor1.set(ControlMode.Velocity, rpm);//racial
         shootMotor2.set(ControlMode.Velocity, rpm);
         triggerMotor.getPIDController().setReference(rpm==0?0:2500, CANSparkMax.ControlType.kVelocity);

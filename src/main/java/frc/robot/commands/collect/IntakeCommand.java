@@ -30,8 +30,10 @@ public class IntakeCommand extends CommandBase {
         if (!DriverStation.isTeleopEnabled()) return;
         if (driveController.getBButton() || shootController.getBButton()) {
             collectSubsystem.enableIntake(false);
-        } else if (driveController.getXButton() || shootController.getXButton()) {
+        } else if (shootController.getXButton()) {
             collectSubsystem.enableIntake(true);
+        } else if (driveController.getXButton()) {
+            collectSubsystem.reverseIntake();
         } else {
             collectSubsystem.disableIntake();
         }

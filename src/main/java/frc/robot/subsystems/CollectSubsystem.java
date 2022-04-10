@@ -7,6 +7,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
@@ -16,6 +17,7 @@ public class CollectSubsystem extends SubsystemBase {
     //private final CANSparkMax testMotor = new CANSparkMax(Constants.MOTOR_SHOOT_TRIGGER, CANSparkMaxLowLevel.MotorType.kBrushless);
     private final NetworkTableInstance nt = NetworkTableInstance.getDefault();
     private boolean intakeEnabled = false;
+    private final Timer timer = new Timer();
     public CollectSubsystem() {
         intakeMotor.restoreFactoryDefaults();
         intakeMotor.setSmartCurrentLimit(30);
@@ -30,10 +32,19 @@ public class CollectSubsystem extends SubsystemBase {
         intakeEnabled = true;
     }
     public void disableIntake(){
-        solenoid.set(DoubleSolenoid.Value.kReverse);
+        solenoid.set(DoubleSolenoid.Value.kOff);
         intakeMotor.set(0);
         //testMotor.set(0);
         intakeEnabled = false;
+    }
+    public void reverseIntake(){
+        timer.reset();
+        timer.start();
+        solenoid.set(DoubleSolenoid.Value.kReverse);
+        intakeMotor.set(1);
+        if (timer.hasElapsed(0.1)){
+            intakeMotor.set(0);
+        }
     }
 
     public boolean isIntakeEnabled() {
