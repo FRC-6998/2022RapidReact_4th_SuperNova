@@ -8,10 +8,13 @@ import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.SparkMaxLimitSwitch;
 import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.commands.shoot.AutoAlignmentCommand;
 
 
 public class ShootSubsystem extends SubsystemBase {
@@ -25,6 +28,10 @@ public class ShootSubsystem extends SubsystemBase {
     private final SparkMaxLimitSwitch angleRevLimit;
 
     private final Timer timer = new Timer();
+
+    private final NetworkTable limelight = NetworkTableInstance.getDefault().getTable("limelight");
+
+    private double targetDistance = 0;
 
     public ShootSubsystem() {
         // Reset motor controllers to factory defaults
@@ -112,6 +119,10 @@ public class ShootSubsystem extends SubsystemBase {
         transferMotor.restoreFactoryDefaults();
         transferMotor.setSmartCurrentLimit(30);
         transferMotor.setInverted(Constants.MOTOR_TRANSFER_INVERTED);
+        transferMotor.getPIDController().setP(0);
+        transferMotor.getPIDController().setI(0);
+        transferMotor.getPIDController().setD(0);
+        transferMotor.getPIDController().setFF(0.00017696);
     }
 
     @Override
@@ -120,12 +131,22 @@ public class ShootSubsystem extends SubsystemBase {
             angleMotor.getEncoder().setPosition(0);
         }
         SmartDashboard.putNumber("Current Velocity", getShootMotorsVelocity()*600/2048);
+        double tx = limelight.getEntry("tx").getDouble(0); // diff angle on x-axis
+        double ty = limelight.getEntry("ty").getDouble(0); // diff angle on y-axis
+
+        // calculate distance in meters
+        targetDistance = (Constants.AUTO_ALIGNMENT_GOAL_HEIGHT_METER - Constants.AUTO_ALIGNMENT_LENS_HEIGHT_METER) / Math.tan(Math.toRadians(Constants.AUTO_ALIGNMENT_MOUNT_ANGLE + ty));
+        // the distance between surface and center of hub is 68 cm or 0.68 m length
+        targetDistance += 0.68;
+
+        SmartDashboard.putNumber("Target Distance",targetDistance);
     }
 
-    public void setShootMotorsVelocity(double rpm){
-        shootMotor1.set(ControlMode.Velocity, rpm==0?0:(rpm*1.25) * 2048.0 / 600.0);
-        shootMotor2.set(ControlMode.Velocity, rpm==0?0:rpm * 2048.0 / 600.0);
-        triggerMotor.getPIDController().setReference(rpm==0?0:0, CANSparkMax.ControlType.kVelocity);
+    public void setShootMotorsVelocity(double distance){
+        double rpm = distance == 0 ? 0 : ((31.381 * distance*distance + 113.69*distance + 2617.2)+(50)) * 2048.0 / 600.0;
+        shootMotor1.set(ControlMode.Velocity, rpm);//racial
+        shootMotor2.set(ControlMode.Velocity, rpm);
+        triggerMotor.getPIDController().setReference(rpm==0?0:2500, CANSparkMax.ControlType.kVelocity);
     }
 
     public double getShootMotorsVelocity(){
@@ -187,7 +208,7 @@ public class ShootSubsystem extends SubsystemBase {
     }
 
     public void setTrigger(double output){
-            transferMotor.set(output);
+        transferMotor.getPIDController().setReference(output,CANSparkMax.ControlType.kVelocity);
     }
 
     public void setTriggerMotorVelocity(double rpm){
@@ -196,6 +217,10 @@ public class ShootSubsystem extends SubsystemBase {
 
     public void stopTriggerMotor(){
         triggerMotor.set(0);
+    }
+
+    public double getTargetDistance(){
+        return targetDistance;
     }
 }
 

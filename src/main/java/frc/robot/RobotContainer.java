@@ -220,15 +220,15 @@ public class RobotContainer {
     }
 
     public void teleopPeriodic(){
-        SmartDashboard.putNumber("Velocity", baseSpeed);
-        shoot.setShootMotorsVelocity(controller2.getRightBumper()?baseSpeed:0);
+        SmartDashboard.putNumber("Velocity", shoot.getShootMotorsVelocity());
+        shoot.setShootMotorsVelocity(controller2.getRightBumper()?shoot.getTargetDistance():0);
         if (controller2.getLeftBumper()){
-            shoot.setTrigger(1);
+            shoot.setTrigger(2500);
         }else{
             shoot.setTrigger(0);
         }
 
-        //shoot.setAngleMotorOutput(0.3*(controller2.getRightTriggerAxis()- controller2.getLeftTriggerAxis()));
+        shoot.setAngleMotorOutput(0.3*(controller2.getRightTriggerAxis()- controller2.getLeftTriggerAxis()));
     }
 
     private void handleColor() {
