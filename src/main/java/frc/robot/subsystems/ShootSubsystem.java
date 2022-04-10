@@ -7,17 +7,24 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.SparkMaxLimitSwitch;
 import com.revrobotics.SparkMaxPIDController;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+
 
 public class ShootSubsystem extends SubsystemBase {
     private final WPI_TalonFX shootMotor1 = new WPI_TalonFX(Constants.MOTOR_SHOOT_MAIN_1);
     private final WPI_TalonFX shootMotor2 = new WPI_TalonFX(Constants.MOTOR_SHOOT_MAIN_2);
     private final CANSparkMax triggerMotor = new CANSparkMax(Constants.MOTOR_SHOOT_TRIGGER, CANSparkMaxLowLevel.MotorType.kBrushless);
+    private final CANSparkMax transferMotor = new CANSparkMax(Constants.MOTOR_TRANSFER, CANSparkMaxLowLevel.MotorType.kBrushless);
     private final CANSparkMax angleMotor = new CANSparkMax(Constants.MOTOR_SHOOT_ANGLE, CANSparkMaxLowLevel.MotorType.kBrushless);
     private final CANSparkMax rotateMotor = new CANSparkMax(Constants.MOTOR_SHOOT_ROTATE, CANSparkMaxLowLevel.MotorType.kBrushless);
-    private final SparkMaxLimitSwitch angleFwdLimit = angleMotor.getForwardLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyClosed);
-    private final SparkMaxLimitSwitch angleRevLimit = angleMotor.getReverseLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyClosed);
+    private final SparkMaxLimitSwitch angleFwdLimit;
+    private final SparkMaxLimitSwitch angleRevLimit;
+
+    private final Timer timer = new Timer();
 
     public ShootSubsystem() {
         // Reset motor controllers to factory defaults
@@ -38,12 +45,12 @@ public class ShootSubsystem extends SubsystemBase {
         shootMotor1.setNeutralMode(NeutralMode.Coast);
         shootMotor2.setNeutralMode(NeutralMode.Coast);
         rotateMotor.setIdleMode(CANSparkMax.IdleMode.kCoast);
-        triggerMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
+        triggerMotor.setIdleMode(CANSparkMax.IdleMode.kCoast);
         angleMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
 
         // Configure current limit on motors
-        shootMotor1.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, 38, 0, 0));
-        shootMotor2.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, 38, 0, 0));
+        shootMotor1.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, 39, 0, 0));
+        shootMotor2.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, 39, 0, 0));
         rotateMotor.setSmartCurrentLimit(30);
         angleMotor.setSmartCurrentLimit(30);
         triggerMotor.setSmartCurrentLimit(30);
@@ -89,14 +96,22 @@ public class ShootSubsystem extends SubsystemBase {
         rotateMotor.set(0);
         rotateMotor.getEncoder().setPosition(0);
 
+        angleFwdLimit =  angleMotor.getForwardLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyClosed);
+        angleRevLimit =  angleMotor.getReverseLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyClosed);
+
         // Enable hard limit switch
-        angleFwdLimit.enableLimitSwitch(true);
+        angleFwdLimit.enableLimitSwitch(false);
         angleRevLimit.enableLimitSwitch(true);
         // Enable soft limit switch
         angleMotor.setSoftLimit(CANSparkMax.SoftLimitDirection.kForward, Constants.SOFT_LIMIT_FWD_SHOOT_ANGLE);
         angleMotor.enableSoftLimit(CANSparkMax.SoftLimitDirection.kForward, true);
 
         angleMotor.getEncoder().setPosition(0);
+
+
+        transferMotor.restoreFactoryDefaults();
+        transferMotor.setSmartCurrentLimit(30);
+        transferMotor.setInverted(Constants.MOTOR_TRANSFER_INVERTED);
     }
 
     @Override
@@ -104,11 +119,13 @@ public class ShootSubsystem extends SubsystemBase {
         if (angleRevLimit.isPressed()){
             angleMotor.getEncoder().setPosition(0);
         }
+        SmartDashboard.putNumber("Current Velocity", getShootMotorsVelocity()*600/2048);
     }
 
     public void setShootMotorsVelocity(double rpm){
-        shootMotor1.set(ControlMode.Velocity, rpm * 2048.0 / 600.0);
-        shootMotor2.set(ControlMode.Velocity, rpm * 2048.0 / 600.0);
+        shootMotor1.set(ControlMode.Velocity, rpm==0?0:(rpm*1.25) * 2048.0 / 600.0);
+        shootMotor2.set(ControlMode.Velocity, rpm==0?0:rpm * 2048.0 / 600.0);
+        triggerMotor.getPIDController().setReference(rpm==0?0:0, CANSparkMax.ControlType.kVelocity);
     }
 
     public double getShootMotorsVelocity(){
@@ -121,16 +138,13 @@ public class ShootSubsystem extends SubsystemBase {
     }
 
     public void setRotateMotorPosition(double position){
-        while (position>0.85){
+        while (position>=1){
             position-=1;
         }
-        while (position<-0.15){
+        while (position<0){
             position+=1;
         }
-        if (position>=0.7&&position<=0.85){
-            rotateMotor.set(0);
-            return;
-        }
+        position = MathUtil.clamp(position, 0, 0.875);
         rotateMotor.getPIDController().setReference(position, CANSparkMax.ControlType.kSmartMotion);
     }
 
@@ -173,7 +187,7 @@ public class ShootSubsystem extends SubsystemBase {
     }
 
     public void setTrigger(double output){
-        triggerMotor.set(output);
+            transferMotor.set(output);
     }
 
     public void setTriggerMotorVelocity(double rpm){

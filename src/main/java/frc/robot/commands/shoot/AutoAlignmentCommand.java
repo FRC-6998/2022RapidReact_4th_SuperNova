@@ -3,6 +3,8 @@ package frc.robot.commands.shoot;
 import edu.wpi.first.hal.CANAPIJNI;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.DriveSubsystem;
@@ -18,7 +20,7 @@ public class AutoAlignmentCommand extends CommandBase {
     private boolean enableAutoAlignment = true;
     private double targetDistance = 0;
 
-    public AutoAlignmentCommand(ShootSubsystem shootSubsystem, DriveSubsystem driveSubsystem) {
+    public AutoAlignmentCommand(ShootSubsystem shootSubsystem, DriveSubsystem driveSubsystem, XboxController shootController) {
         this.shootSubsystem = shootSubsystem;
         this.driveSubsystem = driveSubsystem;
         // each subsystem used by the command must be passed into the
@@ -63,6 +65,7 @@ public class AutoAlignmentCommand extends CommandBase {
                 shootSubsystem.stopAngleMotor();
             }
         }
+        SmartDashboard.putNumber("Target Distance", targetDistance);
     }
 
     @Override

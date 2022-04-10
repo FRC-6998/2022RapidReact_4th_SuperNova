@@ -20,6 +20,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
+import frc.robot.commands.DelayCommand;
+import frc.robot.commands.HangCommand;
 import frc.robot.commands.collect.IntakeCommand;
 import frc.robot.commands.drive.MecanumDriveCommand;
 import frc.robot.commands.shoot.AutoAlignmentCommand;
@@ -58,18 +60,15 @@ public class RobotContainer {
 
     private final NetworkTableInstance nt = NetworkTableInstance.getDefault();
 
+    private final Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
+
     public static final String AUTO_1 = "Auto 1";
     public static final String AUTO_2 = "Auto 2";
     public static final String AUTO_3 = "Auto 3";
 
-    private DriverStation.Alliance alliance;
-
     private boolean teleop = false;
 
-    private int blinkCount = 0;
-    private int lastBrightness = 0;
-
-    private double baseSpeed = 2100;
+    private double baseSpeed = 3700;
     private double xOffset = 0;
 
     private double testHang = 0;
@@ -93,7 +92,7 @@ public class RobotContainer {
 
         drive.setDefaultCommand(new MecanumDriveCommand(drive, controller1));
         intake.setDefaultCommand(new IntakeCommand(intake, controller1, controller2));
-        shoot.setDefaultCommand(new AutoAlignmentCommand(shoot, drive));
+        shoot.setDefaultCommand(new AutoAlignmentCommand(shoot, drive, controller2));
     }
 
 
@@ -124,6 +123,10 @@ public class RobotContainer {
                 hangSubsystem.extendSolenoid();
             }
         }));
+
+        new JoystickButton(controller2, XboxController.Button.kY.value).whenPressed(new InstantCommand(() -> baseSpeed+=50));
+
+        new JoystickButton(controller2, XboxController.Button.kA.value).whenPressed(new InstantCommand(() -> baseSpeed-=50));
 
         //new JoystickButton(controller2, 8).whenPressed(new InstantCommand(() -> shoot.forceDisableAlignment(!shoot.isForceDisableAlignment())));
 
@@ -157,12 +160,14 @@ public class RobotContainer {
 //        }, shoot));
 
 
-//        new JoystickButton(controller3, 2).whenPressed(newHangSubsystem::resetEncoder);
-//
-//        new JoystickButton(controller3, 5).whenPressed(new InstantCommand(() -> newHangSubsystem.setSmartMotionSetpoint(testHang-=50)));
-//        new JoystickButton(controller3, 6).whenPressed(new InstantCommand(() -> newHangSubsystem.setSmartMotionSetpoint(testHang+=50)));
-//        new JoystickButton(controller3, XboxController.Button.kA.value).whenPressed(new InstantCommand(() -> newHangSubsystem.setSmartMotionSetpoint(testHang-=10)));
-//        new JoystickButton(controller3, XboxController.Button.kY.value).whenPressed(new InstantCommand(() -> newHangSubsystem.setSmartMotionSetpoint(testHang+=10)));
+        new JoystickButton(controller3, 2).whenPressed(hangSubsystem::resetEncoder);
+
+        new JoystickButton(controller3, 5).whenPressed(new InstantCommand(compressor::disable).andThen(new HangCommand(hangSubsystem,110)).andThen(new HangCommand(hangSubsystem, 65)).andThen(new DelayCommand(0.5)).andThen(new HangCommand(hangSubsystem, 210)).andThen(new HangCommand(hangSubsystem, 165)).andThen(new DelayCommand(0)).andThen(new HangCommand(hangSubsystem, 200)));
+        new JoystickButton(controller3, XboxController.Button.kA.value).whenPressed(new InstantCommand(() -> hangSubsystem.setSmartMotionSetpoint(testHang-=10)));
+        new JoystickButton(controller3, XboxController.Button.kY.value).whenPressed(new InstantCommand(() -> hangSubsystem.setSmartMotionSetpoint(testHang+=10)));
+
+//        new JoystickButton(controller3, 3).whenPressed(new InstantCommand(() -> hangSubsystem.setSmartMotionSetpoint(110)));
+//        new JoystickButton(controller3, 8).whenPressed(new InstantCommand(() -> hangSubsystem.setSmartMotionSetpoint(170)));
     }
 
 
@@ -172,201 +177,34 @@ public class RobotContainer {
      * @return the command to run in autonomous
      */
     public Command getAutonomousCommand() {
-        Pose2d startPoint = new Pose2d(0, 0, new Rotation2d(0));
-        Pose2d endPoint = new Pose2d(1, 0, new Rotation2d(0));
-        List<Translation2d> waypoints = new ArrayList<>();
-        switch (pathChooser.getSelected()) {
-            case RobotContainer.AUTO_1:
-                endPoint = new Pose2d(1, 0, new Rotation2d(0));
-                break;
-            case RobotContainer.AUTO_2:
-                endPoint = new Pose2d(2, 0, new Rotation2d(0));
-                waypoints = List.of(
-                        new Translation2d(1, 0)
-                );
-                break;
-            case RobotContainer.AUTO_3:
-                endPoint = new Pose2d(3.74, -1.22, Rotation2d.fromDegrees(15));
-                break;
-            default:
-                break;
-        }
-        var autoVoltageConstraint = new MecanumDriveKinematicsConstraint(DriveSubsystem.getKinematics(), 4);
-        Trajectory trajectory = TrajectoryGenerator.generateTrajectory(
-                // Start at the origin facing the +X direction
-                startPoint,
-                // Pass through these two interior waypoints, making an 's' curve path
-                waypoints,
-                // End 3 meters straight ahead of where we started, facing forward
-                endPoint,
-                // Pass config
-                new TrajectoryConfig(4, 1)
-                        // Add kinematics to ensure max speed is actually obeyed
-                        .setKinematics(DriveSubsystem.getKinematics())
-                        // Apply the voltage constraint
-                        .addConstraint(autoVoltageConstraint)
-        );
-//        Command autoCommand = new SequentialCommandGroup(
-//                new InstantCommand(shoot::enableShootMotor, shoot),
-//                new ParallelCommandGroup(
-//                        new RunTrajectoryCommand(drive, trajectory),
-//                        new SequentialCommandGroup(
-//                                new DelayCommand(0.25),
-//                                new InstantCommand(() -> intake.enableIntake(1), intake)
-//                        ),
-//                        new SequentialCommandGroup(
-//                                new DelayCommand(0.5),
-//                                new InstantCommand(() -> {
-//                                    shoot.overrideRotate(-0.4);
-//                                }, shoot),
-//                                new DelayCommand(0.25),
-//                                new InstantCommand(() -> {
-//                                    shoot.setAngleMotor(0.5);
-//                                    shoot.cancelOverrideRotate();
-//                                }),
-//                                new WaitShootSpeedCommand(shoot, 3300),
-//                                new DelayCommand(1),
-//                                new InstantCommand(() -> shoot.setTransferMotorSpeed(0.8), shoot),
-//                                new DelayCommand(0.5),
-//                                new InstantCommand(shoot::stopTransferMotor)
-//                        )
-//                ),
-//                new InstantCommand(intake::disableIntake, intake),
-//                new InstantCommand(() -> shoot.setAngleMotor(0)),
-//                new InstantCommand(() -> shoot.setTransferMotorSpeed(0.8), shoot),
-//                new DelayCommand(1),
-//                new InstantCommand(shoot::stopTransferMotor, shoot),
-//                new InstantCommand(shoot::disableShootMotor, shoot)
-//        );
-
-//        Command autoCommand = new SequentialCommandGroup(
-//                new InstantCommand(() -> shoot.enableShootMotor(3570), shoot),
-//                new InstantCommand(() -> intake.enableIntake(false), intake),
-//                new ParallelCommandGroup(
-//                        new RunTrajectoryCommand(drive, TrajectoryGenerator.generateTrajectory(
-//                                // Start at the origin facing the +X direction
-//                                new Pose2d(0, 0, new Rotation2d(0)),
-//                                // Pass through these two interior waypoints, making an 's' curve path
-//                                new ArrayList<>(),
-//                                // End 3 meters straight ahead of where we started, facing forward
-//                                new Pose2d(1.2, 0, new Rotation2d(0)),
-//                                // Pass config
-//                                new TrajectoryConfig(4, 1)
-//                                        // Add kinematics to ensure max speed is actually obeyed
-//                                        .setKinematics(DriveSubsystem.getKinematics())
-//                                        // Apply the voltage constraint
-//                                        .addConstraint(autoVoltageConstraint)
-//                        ), new Rotation2d(0)),
-//                        new SequentialCommandGroup(
-//                                new InstantCommand(() -> {
-//                                    //shoot.overrideRotate(-0.4);
-//                                }, shoot),
-//                                new DelayCommand(0.6),
-//                                new InstantCommand(shoot::cancelOverrideRotate)
-//                        )
-//                ),
-//                new InstantCommand(drive::stopMotors, drive),
-//                //new InstantCommand(intake::disableIntake, intake),
-//                new DelayCommand(1.6),
-//                new InstantCommand(() -> shoot.setTransferMotorSpeed(0.8), shoot),
-//                new DelayCommand(0.35),
-//                new InstantCommand(shoot::stopTransferMotor),
-//                new InstantCommand(() -> shoot.enableShootMotor(3650), shoot),
-//                // must be 1 if run full path
-//                new DelayCommand(5),
-//                new InstantCommand(() -> shoot.setTransferMotorSpeed(0.8), shoot),
-//                new DelayCommand(0.5),
-//                new InstantCommand(shoot::stopTransferMotor, shoot),
-//
-//
-//                new InstantCommand(() -> intake.enableIntake(1), intake),
-//                new InstantCommand(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        shoot.enableShootMotor(4300);
-//                    }
-//                }, shoot),
-//                new RunTrajectoryCommand(drive, TrajectoryGenerator.generateTrajectory(
-//                        // Start at the origin facing the +X direction
-//                        new Pose2d(1.2, 0, new Rotation2d(0)),
-//                        // Pass through these two interior waypoints, making an 's' curve path
-//                        new ArrayList<>(),
-//                        // End 3 meters straight ahead of where we started, facing forward
-//                        new Pose2d(3.9, -1.48, Rotation2d.fromDegrees(15)),
-//                        // Pass config
-//                        new TrajectoryConfig(4, 1)
-//                                // Add kinematics to ensure max speed is actually obeyed
-//                                .setKinematics(drive.getDriveKinematics())
-//                                // Apply the voltage constraint
-//                                .addConstraint(autoVoltageConstraint)
-//                ), Rotation2d.fromDegrees(15)),
-//                new CommandBase() {
-//                    Timer timer = new Timer();
-//
-//                    @Override
-//                    public void initialize() {
-//                        timer.reset();
-//                        timer.start();
-//
-//                    }
-//
-//                    @Override
-//                    public void execute() {
-//                        drive.driveCartesian(-1, 0, 0);
-//                    }
-//
-//                    @Override
-//                    public void end(boolean interrupted) {
-//                        drive.driveCartesian(0, 0, 0);
-//                        timer.stop();
-//                    }
-//
-//                    @Override
-//                    public boolean isFinished() {
-//                        return timer.hasElapsed(1);
-//                    }
-//                },
-//                new DelayCommand(1.5),
-//                new InstantCommand(() -> shoot.setTransferMotorSpeed(0.8)),
-//                new DelayCommand(3),
-//                new InstantCommand(shoot::stopTransferMotor, shoot),
-//                new InstantCommand(shoot::disableShootMotor, shoot),
-//                new InstantCommand(intake::disableIntake, intake)
-//        );
-//        return autoCommand;
         return new InstantCommand();
     }
 
     public void robotInit() {
         drive.resetYaw();
-        //shoot.disableLimeLightGreenLED();
+        compressor.enableDigital();
     }
 
     public void autonomousInit() {
         teleop = false;
-        alliance = DriverStation.getAlliance();
-//        shoot.setAlliance(alliance);
-//        shoot.enableLimelightGreenLED();
     }
 
     public void teleopInit() {
         teleop = true;
-        alliance = DriverStation.getAlliance();
 
         new ZeroShootAngleCommand(shoot).schedule();
 //        shoot.setAlliance(alliance);
 //        shoot.enableLimelightGreenLED();
 //        shoot.forceDisableAlignment(false);
 
-//        newHangSubsystem.resetEncoder();
-//        newHangSubsystem.set(0);
+        hangSubsystem.resetEncoder();
+        hangSubsystem.set(0);
         testHang = 0;
         shoot.stopAllMotors();
     }
 
     public void testInit() {
         teleop = false;
-        alliance = DriverStation.getAlliance();
 //        shoot.setAlliance(alliance);
 //        shoot.enableLimelightGreenLED();
 
@@ -382,8 +220,15 @@ public class RobotContainer {
     }
 
     public void teleopPeriodic(){
-        shoot.setShootMotorsVelocity(controller1.getRightBumper()?4000:0);
-        shoot.setTrigger(controller1.getLeftBumper()?1:0);
+        SmartDashboard.putNumber("Velocity", baseSpeed);
+        shoot.setShootMotorsVelocity(controller2.getRightBumper()?baseSpeed:0);
+        if (controller2.getLeftBumper()){
+            shoot.setTrigger(1);
+        }else{
+            shoot.setTrigger(0);
+        }
+
+        //shoot.setAngleMotorOutput(0.3*(controller2.getRightTriggerAxis()- controller2.getLeftTriggerAxis()));
     }
 
     private void handleColor() {

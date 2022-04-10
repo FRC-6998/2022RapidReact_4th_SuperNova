@@ -25,8 +25,8 @@ public final class Constants {
     public static final int MOTOR_CHASSIS_RL = 3;
     public static final int MOTOR_CHASSIS_RR = 4;
     // Hang
-    public static final int MOTOR_HANG_LEFT = 20;
-    public static final int MOTOR_HANG_RIGHT = 21;
+    public static final int MOTOR_HANG_LEFT = 5;
+    public static final int MOTOR_HANG_RIGHT = 6;
     // Shoot
     public static final int MOTOR_SHOOT_MAIN_1 = 11;
     public static final int MOTOR_SHOOT_MAIN_2 = 12;
@@ -78,18 +78,18 @@ public final class Constants {
     public static final CANSparkMax.IdleMode IDLE_MODE = CANSparkMax.IdleMode.kCoast;
 
     // FeedForward constants for motors
-    public static final double FF_SHOOT_MAIN = 0.54;
+    public static final double FF_SHOOT_MAIN = 0.054;
     public static final double FF_SHOOT_ROTATE = 0.00479; // velocity p=0.001 maxV=200 maxA=175
     public static final double FF_SHOOT_ANGLE = 0.000093;
-    public static final double FF_SHOOT_TRIGGER = 0;
-    public static final double FF_HANG = 0.0025;
+    public static final double FF_SHOOT_TRIGGER = 0.000089661;
+    public static final double FF_HANG = 0.002;
     public static final double FF_CHASSIS_KS = 0.15085;
     public static final double FF_CHASSIS_KV = 3.7072; // unit is voltage/meter per second
     public static final double FF_CHASSIS_KA = 0.34931; // unit is voltage/meter per second^2
 
     // PID constants for motors
     public static final double[] PID_CHASSIS = {1.8833, 0, 0}; // From sys-id
-    public static final double[] PID_HANG = {0, 0, 0};
+    public static final double[] PID_HANG = {0.00025, 0, 0};
     public static final double[] PID_SHOOT_MAIN = {0.10098, 0, 0};
     public static final double[] PID_SHOOT_ROTATE = {0.001, 0, 0};
     public static final double[] PID_SHOOT_ANGLE = {0.00007, 0, 0};
@@ -105,7 +105,7 @@ public final class Constants {
 
     // Auto alignment
     public static final double AUTO_ALIGNMENT_MOUNT_ANGLE = 20;
-    public static final double AUTO_ALIGNMENT_LENS_HEIGHT_METER = 1.07; // TODO need measure
+    public static final double AUTO_ALIGNMENT_LENS_HEIGHT_METER = 0.95;
     public static final double AUTO_ALIGNMENT_GOAL_HEIGHT_METER = 2.5;
 
     public static final double SHOOT_ROTATE_GEARING = 53.6;

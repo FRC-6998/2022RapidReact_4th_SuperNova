@@ -11,8 +11,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class HangSubsystem extends SubsystemBase {
-    private final CANSparkMax leftHangMotor = new CANSparkMax(20, CANSparkMaxLowLevel.MotorType.kBrushless);
-    private final CANSparkMax rightHangMotor = new CANSparkMax(21, CANSparkMaxLowLevel.MotorType.kBrushless);
+    private final CANSparkMax leftHangMotor = new CANSparkMax(Constants.MOTOR_HANG_LEFT, CANSparkMaxLowLevel.MotorType.kBrushless);
+    private final CANSparkMax rightHangMotor = new CANSparkMax(Constants.MOTOR_HANG_RIGHT, CANSparkMaxLowLevel.MotorType.kBrushless);
     private final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.SOLENOID_HANG_FORWARD, Constants.SOLENOID_HANG_REVERSE);
 
     public HangSubsystem() {
@@ -22,6 +22,9 @@ public class HangSubsystem extends SubsystemBase {
         // Set motor's invert flag
         leftHangMotor.setInverted(Constants.MOTOR_HANG_LEFT_INVERTED);
         rightHangMotor.setInverted(Constants.MOTOR_HANG_RIGHT_INVERTED);
+
+        leftHangMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
+        rightHangMotor.setIdleMode(CANSparkMax.IdleMode.kBrake);
         // Set motor's current draw limit
         leftHangMotor.setSmartCurrentLimit(39);
         rightHangMotor.setSmartCurrentLimit(39);
@@ -44,6 +47,8 @@ public class HangSubsystem extends SubsystemBase {
 
         resetEncoder();
 
+        rightHangMotor.follow(leftHangMotor, true);
+
         leftHangMotor.set(0);
         rightHangMotor.set(0);
     }
@@ -65,17 +70,21 @@ public class HangSubsystem extends SubsystemBase {
 
     public void set(double speed){
         leftHangMotor.set(speed);
-        rightHangMotor.set(speed);
+        //rightHangMotor.set(speed);
     }
 
     public void setSmartMotionSetpoint(double setpoint){
         leftHangMotor.getPIDController().setReference(setpoint, CANSparkMax.ControlType.kSmartMotion);
-        rightHangMotor.getPIDController().setReference(setpoint, CANSparkMax.ControlType.kSmartMotion);
+        //rightHangMotor.getPIDController().setReference(setpoint, CANSparkMax.ControlType.kSmartMotion);
     }
 
     public void stopMotors(){
         leftHangMotor.set(0);
-        rightHangMotor.set(0);
+        //rightHangMotor.set(0);
+    }
+
+    public double getHangerPosition(){
+        return (leftHangMotor.getEncoder().getPosition() + rightHangMotor.getEncoder().getPosition())/2.0;
     }
 
 
@@ -92,6 +101,6 @@ public class HangSubsystem extends SubsystemBase {
     }
 
     public boolean getSolenoid(){
-        return doubleSolenoid.get() == DoubleSolenoid.Value.kForward;
+        return doubleSolenoid.get() == DoubleSolenoid.Value.kForward || doubleSolenoid.get() == DoubleSolenoid.Value.kOff;
     }
 }

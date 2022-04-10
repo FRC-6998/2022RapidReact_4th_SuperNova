@@ -21,7 +21,7 @@ public class ZeroShootAngleCommand extends CommandBase {
     public void initialize() {
         timer.reset();
         timer.start();
-        shootSubsystem.setAngleMotorOutput(-0.1);
+        shootSubsystem.setAngleMotorOutput(-0.15);
     }
 
     @Override
