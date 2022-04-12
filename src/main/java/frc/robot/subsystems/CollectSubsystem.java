@@ -39,5 +39,9 @@ public class CollectSubsystem extends SubsystemBase {
     public boolean isIntakeEnabled() {
         return intakeEnabled;
     }
+
+    public void enableIntake() {
+        enableIntake(false);
+    }
 }
 

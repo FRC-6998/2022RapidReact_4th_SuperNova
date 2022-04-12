@@ -45,8 +45,6 @@ public class DriveSubsystem extends SubsystemBase {
     private double deadband = Constants.CHASSIS_DEADBAND;
 
     public DriveSubsystem() {
-        resetYaw();
-
         // Odometry
         odometry = new MecanumDriveOdometry(kinematics, navX.getRotation2d());
         // Restore motor controllers to factory defaults
@@ -92,6 +90,7 @@ public class DriveSubsystem extends SubsystemBase {
         motorFrontRight.getPIDController().setSmartMotionMaxAccel(Constants.MAX_CHASSIS_ACCELERATION_METER_PETER_SECOND_SQUARE, 0);
         motorRearLeft.getPIDController().setSmartMotionMaxAccel(Constants.MAX_CHASSIS_ACCELERATION_METER_PETER_SECOND_SQUARE, 0);
         motorRearRight.getPIDController().setSmartMotionMaxAccel(Constants.MAX_CHASSIS_ACCELERATION_METER_PETER_SECOND_SQUARE, 0);
+        resetYaw();
     }
 
     @Override
@@ -111,6 +110,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     public void resetYaw() {
         navX.reset();
+        odometry.resetPosition(odometry.getPoseMeters(), new Rotation2d(0));
     }
 
 
@@ -224,6 +224,10 @@ public class DriveSubsystem extends SubsystemBase {
                 motorRearLeft.getEncoder().getVelocity(),
                 motorRearRight.getEncoder().getVelocity()
         );
+    }
+
+    public ChassisSpeeds getChassisSpeeds(){
+        return kinematics.toChassisSpeeds(getWheelSpeeds());
     }
 
     /**

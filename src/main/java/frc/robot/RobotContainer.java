@@ -5,34 +5,26 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.trajectory.Trajectory;
-import edu.wpi.first.math.trajectory.TrajectoryConfig;
-import edu.wpi.first.math.trajectory.TrajectoryGenerator;
-import edu.wpi.first.math.trajectory.constraint.MecanumDriveKinematicsConstraint;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
 import frc.robot.commands.DelayCommand;
 import frc.robot.commands.HangCommand;
 import frc.robot.commands.collect.IntakeCommand;
 import frc.robot.commands.drive.MecanumDriveCommand;
-import frc.robot.commands.shoot.AutoAlignmentCommand;
+import frc.robot.commands.shoot.AlignmentCommand;
+import frc.robot.commands.shoot.RotateToAngleCommand;
 import frc.robot.commands.shoot.ZeroShootAngleCommand;
 import frc.robot.subsystems.CollectSubsystem;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.HangSubsystem;
 import frc.robot.subsystems.ShootSubsystem;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**
@@ -43,36 +35,33 @@ import java.util.List;
  */
 public class RobotContainer {
     // Game Controllers
-    private final XboxController controller1 = new XboxController(0);
-    private final XboxController controller2 = new XboxController(1);
+    private final XboxController driveController = new XboxController(0);
+    private final XboxController shootController = new XboxController(1);
     private final XboxController controller3 = new XboxController(2);
 
     // Subsystems
-    private final CollectSubsystem intake = new CollectSubsystem();
+    private final CollectSubsystem collectSubsystem = new CollectSubsystem();
     private final DriveSubsystem drive = new DriveSubsystem();
-    private final ShootSubsystem shoot = new ShootSubsystem();
+    private final ShootSubsystem shootSubsystem = new ShootSubsystem();
     private final HangSubsystem hangSubsystem = new HangSubsystem();
 
+    // Auto Path Chooser
     private final SendableChooser<String> pathChooser = new SendableChooser<>();
 
-    private final AddressableLED hangLightStrip = new AddressableLED(9);
-    private final AddressableLEDBuffer hangLightStripBuffer = new AddressableLEDBuffer(148);
+    private final AlignmentCommand alignmentCommand = new AlignmentCommand(shootSubsystem, drive, collectSubsystem, shootController);
+
+    private final AddressableLED hangLightStrip = new AddressableLED(Constants.LED_PWM_PORT);
+    private final AddressableLEDBuffer hangLightStripBuffer = new AddressableLEDBuffer(Constants.LED_LENGTH);
 
     private final NetworkTableInstance nt = NetworkTableInstance.getDefault();
 
     private final Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
 
-    public static final String AUTO_1 = "Auto 1";
-    public static final String AUTO_2 = "Auto 2";
-    public static final String AUTO_3 = "Auto 3";
+    public static final String AUTO_FOUR_BALL = "4 Ball Auto";
+    public static final String AUTO_TWO_BALL = "2 Ball Auto";
 
-    private boolean teleop = false;
-
-    private double baseSpeed = 3700;
-    private double xOffset = 0;
-
-    private double testHang = 0;
-
+    private double extraShootSpeed = 0;
+    private double rotateOffset = 0;
 
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -85,14 +74,13 @@ public class RobotContainer {
         hangLightStrip.start();
 
         // Add path options and send to the dashboard
-        pathChooser.setDefaultOption("Auto 1", AUTO_1);
-        pathChooser.addOption("Auto 2", AUTO_2);
-        pathChooser.addOption("Auto 3", AUTO_3);
+        pathChooser.setDefaultOption("4 Ball Auto", AUTO_FOUR_BALL);
+        pathChooser.addOption("2 Ball Auto", AUTO_TWO_BALL);
         SmartDashboard.putData("Auto choices", pathChooser);
 
-        drive.setDefaultCommand(new MecanumDriveCommand(drive, controller1));
-        intake.setDefaultCommand(new IntakeCommand(intake, controller1, controller2));
-        shoot.setDefaultCommand(new AutoAlignmentCommand(shoot, drive, controller2));
+        drive.setDefaultCommand(new MecanumDriveCommand(drive, driveController));
+        collectSubsystem.setDefaultCommand(new IntakeCommand(collectSubsystem, driveController, shootController));
+        shootSubsystem.setDefaultCommand(alignmentCommand);
     }
 
 
@@ -105,69 +93,38 @@ public class RobotContainer {
     private void configureButtonBindings() {
         // Add button to command mappings here.
         // See https://docs.wpilib.org/en/stable/docs/software/commandbased/binding-commands-to-triggers.html
-        new JoystickButton(controller1, 7).whenPressed(new InstantCommand(drive::resetYaw));
 
-        new POVButton(controller2, 0)
-                .whenPressed(new InstantCommand(() -> baseSpeed += 50));
-        new POVButton(controller2, 90)
-                .whenPressed(new InstantCommand(() -> xOffset -= 0.2));
-        new POVButton(controller2, 180)
-                .whenPressed(new InstantCommand(() -> baseSpeed -= 50));
-        new POVButton(controller2, 270)
-                .whenPressed(new InstantCommand(() -> xOffset += 0.2));
-
-        new JoystickButton(controller1, XboxController.Button.kA.value).whenPressed(new InstantCommand(() -> {
-            if (hangSubsystem.getSolenoid()){
-                hangSubsystem.collapseSolenoid();
-            }else{
-                hangSubsystem.extendSolenoid();
-            }
-        }));
-
-        new JoystickButton(controller2, XboxController.Button.kY.value).whenPressed(new InstantCommand(() -> baseSpeed+=50));
-
-        new JoystickButton(controller2, XboxController.Button.kA.value).whenPressed(new InstantCommand(() -> baseSpeed-=50));
-
-        //new JoystickButton(controller2, 8).whenPressed(new InstantCommand(() -> shoot.forceDisableAlignment(!shoot.isForceDisableAlignment())));
-
-        // control shoot motors and transfer motor
-//        shoot.setDefaultCommand(new RunCommand(() -> {
-//            if (!teleop) return;
-//            if (controller2.getLeftTriggerAxis() >= 0.2 || controller2.getRightTriggerAxis() >= 0.2) {
-//                hang.disableCompressor();
-//                shoot.enableShootMotor();
-//            } else {
-//                shoot.disableShootMotor();
-//                hang.enableCompressor();
-//            }
-//            if (controller2.getRightTriggerAxis() >= 0.2) {
-//                shoot.setTransferMotorSpeed(0.8);
-//            } else if (controller2.getYButton()) {
-//                shoot.setTransferMotorSpeed(-0.8);
-//            } else {
-//                shoot.stopTransferMotor();
-//            }
-//            double rot = controller2.getRightX();
-//            rot = Math.abs(rot) >= 0.2 ? rot : 0;
-//            if (rot != 0) {
-//                shoot.overrideRotate(Math.copySign(0.5, rot));
-//            } else {
-//                shoot.cancelOverrideRotate();
-//            }
-//            shoot.setBaseSpeed(baseSpeed);
-//            shoot.setXOffset(xOffset);
-//            SmartDashboard.putNumber("Base Speed", baseSpeed);
-//        }, shoot));
+        // use window or menu button on drive controller to reset chassis heading
+        new JoystickButton(driveController, 7).whenPressed(new InstantCommand(drive::resetYaw));
+        new JoystickButton(driveController, 8).whenPressed(new InstantCommand(drive::resetYaw));
 
 
-        new JoystickButton(controller3, 2).whenPressed(hangSubsystem::resetEncoder);
+        // use pov on shoot controller to adjust speed and rotation offset
+        new POVButton(shootController, 0)
+                .whenPressed(new InstantCommand(() -> alignmentCommand.setExtraRPM(alignmentCommand.getExtraRPM()+50)));
+        new POVButton(shootController, 90)
+                .whenPressed(new InstantCommand(() -> alignmentCommand.setXOffset(alignmentCommand.getXOffset()+1)));
+        new POVButton(shootController, 180)
+                .whenPressed(new InstantCommand(() -> alignmentCommand.setExtraRPM(alignmentCommand.getExtraRPM()-50)));
+        new POVButton(shootController, 270)
+                .whenPressed(new InstantCommand(() -> alignmentCommand.setXOffset(alignmentCommand.getXOffset()-1)));
 
-        new JoystickButton(controller3, 5).whenPressed(new InstantCommand(compressor::disable).andThen(new HangCommand(hangSubsystem,110)).andThen(new HangCommand(hangSubsystem, 65)).andThen(new DelayCommand(0.5)).andThen(new HangCommand(hangSubsystem, 210)).andThen(new HangCommand(hangSubsystem, 165)).andThen(new DelayCommand(0)).andThen(new HangCommand(hangSubsystem, 200)));
-        new JoystickButton(controller3, XboxController.Button.kA.value).whenPressed(new InstantCommand(() -> hangSubsystem.setSmartMotionSetpoint(testHang-=10)));
-        new JoystickButton(controller3, XboxController.Button.kY.value).whenPressed(new InstantCommand(() -> hangSubsystem.setSmartMotionSetpoint(testHang+=10)));
+        new JoystickButton(shootController, 8).whenPressed(new InstantCommand(()-> alignmentCommand.setAutoAlignment(!alignmentCommand.getAutoAlignment())));
 
-//        new JoystickButton(controller3, 3).whenPressed(new InstantCommand(() -> hangSubsystem.setSmartMotionSetpoint(110)));
-//        new JoystickButton(controller3, 8).whenPressed(new InstantCommand(() -> hangSubsystem.setSmartMotionSetpoint(170)));
+        //new JoystickButton(shootController, XboxController.Button.kLeftBumper.value).whenPressed(new InstantCommand(hangSubsystem::collapseSolenoid));
+        //new JoystickButton(shootController, XboxController.Button.kRightBumper.value).whenPressed(new InstantCommand(hangSubsystem::extendSolenoid));
+
+        new JoystickButton(controller3, 6).whenPressed(
+                new SequentialCommandGroup(
+                        new RotateToAngleCommand(shootSubsystem, 270),
+                        new InstantCommand(hangSubsystem::extendSolenoid),
+                        new DelayCommand(0.5),
+                        new HangCommand(hangSubsystem, 60),
+                        new InstantCommand(hangSubsystem::stopMotors),
+                        new InstantCommand(hangSubsystem::resetEncoder)
+                )
+        );
+        new JoystickButton(controller3, 5).whenPressed(new InstantCommand(compressor::disable).andThen(new HangCommand(hangSubsystem, 110)).andThen(new HangCommand(hangSubsystem, 65)).andThen(new DelayCommand(0.5)).andThen(new HangCommand(hangSubsystem, 205)).andThen(new HangCommand(hangSubsystem, 165)).andThen(new DelayCommand(0)).andThen(new HangCommand(hangSubsystem, 200)));
     }
 
 
@@ -177,6 +134,14 @@ public class RobotContainer {
      * @return the command to run in autonomous
      */
     public Command getAutonomousCommand() {
+        switch (pathChooser.getSelected()){
+            case AUTO_FOUR_BALL:
+                return PathManager.getFourBallAuto(drive, shootSubsystem, collectSubsystem, shootController);
+            case AUTO_TWO_BALL:
+                return PathManager.getTwoBallAuto(drive, shootSubsystem, collectSubsystem, shootController);
+            default:
+                break;
+        }
         return new InstantCommand();
     }
 
@@ -186,28 +151,17 @@ public class RobotContainer {
     }
 
     public void autonomousInit() {
-        teleop = false;
+        enableLimeLightLED();
+        hangSubsystem.stopSolenoid();
     }
 
     public void teleopInit() {
-        teleop = true;
-
-        new ZeroShootAngleCommand(shoot).schedule();
-//        shoot.setAlliance(alliance);
-//        shoot.enableLimelightGreenLED();
-//        shoot.forceDisableAlignment(false);
-
-        hangSubsystem.resetEncoder();
-        hangSubsystem.set(0);
-        testHang = 0;
-        shoot.stopAllMotors();
+        enableLimeLightLED();
+        new ZeroShootAngleCommand(shootSubsystem).schedule();
+        extraShootSpeed = 0;
     }
 
     public void testInit() {
-        teleop = false;
-//        shoot.setAlliance(alliance);
-//        shoot.enableLimelightGreenLED();
-
     }
 
     public void robotPeriodic() {
@@ -215,20 +169,12 @@ public class RobotContainer {
     }
 
     public void disableInit() {
-        teleop = false;
-//        shoot.disableLimeLightGreenLED();
+        disableLimeLightLED();
+        shootController.setRumble(GenericHID.RumbleType.kLeftRumble, 0);
     }
 
-    public void teleopPeriodic(){
-        SmartDashboard.putNumber("Velocity", baseSpeed);
-        shoot.setShootMotorsVelocity(controller2.getRightBumper()?baseSpeed:0);
-        if (controller2.getLeftBumper()){
-            shoot.setTrigger(1);
-        }else{
-            shoot.setTrigger(0);
-        }
-
-        //shoot.setAngleMotorOutput(0.3*(controller2.getRightTriggerAxis()- controller2.getLeftTriggerAxis()));
+    public void teleopPeriodic() {
+        SmartDashboard.putNumber("Shoot Speed Offset", extraShootSpeed);
     }
 
     private void handleColor() {
@@ -289,4 +235,20 @@ public class RobotContainer {
 //        }
 //        hangLightStrip.setData(hangLightStripBuffer);
     }
+
+    public void enableLimeLightLED(){
+        writeLimeLightLEDMode(false);
+        writeLimeLightLEDMode(true);
+    }
+
+    public void disableLimeLightLED(){
+        writeLimeLightLEDMode(true);
+        writeLimeLightLEDMode(false);
+    }
+
+
+    private void writeLimeLightLEDMode(boolean enable){
+        nt.getTable("limelight").getEntry("ledMode").setNumber(enable?3:1);
+    }
+
 }

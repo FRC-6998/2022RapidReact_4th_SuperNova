@@ -11,6 +11,8 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.DriveSubsystem;
 
 
+import java.util.List;
+
 import static edu.wpi.first.util.ErrorMessages.requireNonNullParam;
 
 
@@ -22,9 +24,10 @@ public class RunTrajectoryCommand extends CommandBase {
     private final DriveSubsystem drive;
     private final Rotation2d targetRot;
 
-    public RunTrajectoryCommand(DriveSubsystem driveTrainSubsystem, Trajectory trajectory, Rotation2d targetRot) {
+    public RunTrajectoryCommand(DriveSubsystem driveTrainSubsystem, Trajectory trajectory) {
         this.trajectory = requireNonNullParam(trajectory, "trajectory", "RamseteCommand");
-        this.targetRot = targetRot;
+        List<Trajectory.State> states = trajectory.getStates();
+        this.targetRot = states.get(states.size()-1).poseMeters.getRotation();
         follower = new HolonomicDriveController(
                 new PIDController(1,0,0),
                 new PIDController(1,0,0),
@@ -65,9 +68,6 @@ public class RunTrajectoryCommand extends CommandBase {
     @Override
     public void end(boolean interrupted) {
         timer.stop();
-
-        if (interrupted) {
-            drive.stopMotors();
-        }
+        drive.stopMotors();
     }
 }
