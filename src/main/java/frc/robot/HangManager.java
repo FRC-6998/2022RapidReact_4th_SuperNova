@@ -44,8 +44,8 @@ public class HangManager {
                 step = 2;
                 // go to 198° from vertical (mid+high)
                 return new SequentialCommandGroup(
-                        new MoveToHangSetpointCommand(hangSubsystem, 175),
-                        new MoveToHangSetpointCommand(hangSubsystem, 150)
+                        new MoveToHangSetpointCommand(hangSubsystem, 173),
+                        new MoveToHangSetpointCommand(hangSubsystem, 160)
                 );
             case 2:
                 step = 4;
@@ -54,21 +54,22 @@ public class HangManager {
                         new MoveToHangSetpointCommand(hangSubsystem, 125),
                         new DelayCommand(1),
                         new MoveToHangSetpointCommand(hangSubsystem, 160),
-                        new MoveToHangSetpointCommand(hangSubsystem, 275),
-                        new MoveToHangSetpointCommand(hangSubsystem, 255)
+                        new MoveToHangSetpointCommand(hangSubsystem, 264),
+                        new MoveToHangSetpointCommand(hangSubsystem, 254)
                 );
             case 3:
                 step = 4;
                 // go to 360° from vertical (high+traversal)
                 return new SequentialCommandGroup(
-                        new MoveToHangSetpointCommand(hangSubsystem, 275),
-                        new MoveToHangSetpointCommand(hangSubsystem, 255)
+                        new MoveToHangSetpointCommand(hangSubsystem, 264),
+                        new MoveToHangSetpointCommand(hangSubsystem, 254)
                 );
             case 4:
                 step = 6;
                 // go to 297° to unlock hook from high rung and then go to 360° from vertical (traversal)
                 return new SequentialCommandGroup(
-                        new MoveToHangSetpointCommand(hangSubsystem, 230),
+                        new MoveToHangSetpointCommand(hangSubsystem, 215),
+                        new DelayCommand(1),
                         new MoveToHangSetpointCommand(hangSubsystem, 260)
                 );
             case 5:
