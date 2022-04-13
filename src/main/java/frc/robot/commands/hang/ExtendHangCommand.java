@@ -1,16 +1,16 @@
-package frc.robot.commands;
+package frc.robot.commands.hang;
 
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.subsystems.HangSubsystem;
 
 
-public class HangCommand extends CommandBase {
+public class ExtendHangCommand extends CommandBase {
     private final HangSubsystem hangSubsystem;
-    private final double setpoint;
+    private final Timer timer = new Timer();
 
-    public HangCommand(HangSubsystem hangSubsystem, double setpoint) {
+    public ExtendHangCommand(HangSubsystem hangSubsystem) {
         this.hangSubsystem = hangSubsystem;
-        this.setpoint = setpoint;
         // each subsystem used by the command must be passed into the
         // addRequirements() method (which takes a vararg of Subsystem)
         addRequirements(this.hangSubsystem);
@@ -18,21 +18,26 @@ public class HangCommand extends CommandBase {
 
     @Override
     public void initialize() {
-
+        timer.reset();
+        timer.start();
+        hangSubsystem.resetEncoder();
+        hangSubsystem.extendSolenoid();
     }
 
     @Override
     public void execute() {
-        hangSubsystem.setSmartMotionSetpoint(setpoint);
+        if (timer.hasElapsed(0.5)){
+            hangSubsystem.setSmartMotionSetpoint(60);
+        }
     }
 
     @Override
     public boolean isFinished() {
-        // TODO: Make this return true when this Command no longer needs to run execute()
-        return Math.abs(hangSubsystem.getHangerPosition()-setpoint)<=1;
+        return Math.abs(hangSubsystem.getHangerPosition()-60)<=2 || timer.hasElapsed(5);
     }
 
     @Override
     public void end(boolean interrupted) {
+        timer.stop();
     }
 }

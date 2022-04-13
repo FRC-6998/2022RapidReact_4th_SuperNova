@@ -103,4 +103,9 @@ public class HangSubsystem extends SubsystemBase {
     public boolean getSolenoid(){
         return doubleSolenoid.get() == DoubleSolenoid.Value.kForward || doubleSolenoid.get() == DoubleSolenoid.Value.kOff;
     }
+
+    public void setIdleMode(CANSparkMax.IdleMode mode){
+        leftHangMotor.setIdleMode(mode);
+        rightHangMotor.setIdleMode(mode);
+    }
 }

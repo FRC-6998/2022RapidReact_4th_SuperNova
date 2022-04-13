@@ -5,26 +5,27 @@
 
 package frc.robot;
 
+import com.revrobotics.CANSparkMax;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.POVButton;
-import frc.robot.commands.DelayCommand;
-import frc.robot.commands.HangCommand;
 import frc.robot.commands.collect.IntakeCommand;
 import frc.robot.commands.drive.MecanumDriveCommand;
 import frc.robot.commands.shoot.AlignmentCommand;
-import frc.robot.commands.shoot.RotateToAngleCommand;
 import frc.robot.commands.shoot.ZeroShootAngleCommand;
 import frc.robot.subsystems.CollectSubsystem;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.HangSubsystem;
 import frc.robot.subsystems.ShootSubsystem;
+
+import java.util.Objects;
 
 
 /**
@@ -50,6 +51,10 @@ public class RobotContainer {
 
     private final AlignmentCommand alignmentCommand = new AlignmentCommand(shootSubsystem, drive, collectSubsystem, shootController);
 
+    private final HangManager hangManager = new HangManager(hangSubsystem, shootSubsystem);
+
+    private Command currentHangCommand = new SequentialCommandGroup();
+
     private final AddressableLED hangLightStrip = new AddressableLED(Constants.LED_PWM_PORT);
     private final AddressableLEDBuffer hangLightStripBuffer = new AddressableLEDBuffer(Constants.LED_LENGTH);
 
@@ -62,6 +67,8 @@ public class RobotContainer {
 
     private double extraShootSpeed = 0;
     private double rotateOffset = 0;
+
+    private boolean hangFinished = false;
 
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -81,6 +88,12 @@ public class RobotContainer {
         drive.setDefaultCommand(new MecanumDriveCommand(drive, driveController));
         collectSubsystem.setDefaultCommand(new IntakeCommand(collectSubsystem, driveController, shootController));
         shootSubsystem.setDefaultCommand(alignmentCommand);
+
+        CommandScheduler.getInstance().onCommandFinish(command -> {
+            if (Objects.equals(command.getName(), "Hang")){
+                hangFinished = true;
+            }
+        });
     }
 
 
@@ -111,20 +124,35 @@ public class RobotContainer {
 
         new JoystickButton(shootController, 8).whenPressed(new InstantCommand(()-> alignmentCommand.setAutoAlignment(!alignmentCommand.getAutoAlignment())));
 
-        //new JoystickButton(shootController, XboxController.Button.kLeftBumper.value).whenPressed(new InstantCommand(hangSubsystem::collapseSolenoid));
-        //new JoystickButton(shootController, XboxController.Button.kRightBumper.value).whenPressed(new InstantCommand(hangSubsystem::extendSolenoid));
+        new JoystickButton(controller3, 5).whenPressed(new InstantCommand(() -> {
+            currentHangCommand.cancel();
+            hangFinished = false;
+            currentHangCommand = hangManager.prevCommand().withName("Hang");
+            currentHangCommand.schedule();
+        }));
 
-        new JoystickButton(controller3, 6).whenPressed(
-                new SequentialCommandGroup(
-                        new RotateToAngleCommand(shootSubsystem, 270),
-                        new InstantCommand(hangSubsystem::extendSolenoid),
-                        new DelayCommand(0.5),
-                        new HangCommand(hangSubsystem, 60),
-                        new InstantCommand(hangSubsystem::stopMotors),
-                        new InstantCommand(hangSubsystem::resetEncoder)
-                )
-        );
-        new JoystickButton(controller3, 5).whenPressed(new InstantCommand(compressor::disable).andThen(new HangCommand(hangSubsystem, 110)).andThen(new HangCommand(hangSubsystem, 65)).andThen(new DelayCommand(0.5)).andThen(new HangCommand(hangSubsystem, 205)).andThen(new HangCommand(hangSubsystem, 165)).andThen(new DelayCommand(0)).andThen(new HangCommand(hangSubsystem, 200)));
+        new JoystickButton(controller3, 6).whenPressed(new InstantCommand(() -> {
+            if (hangManager.getStep() == -1 || hangFinished){
+                hangFinished = false;
+                currentHangCommand = hangManager.nextCommand().withName("Hang");
+                currentHangCommand.schedule();
+            }
+        }));
+
+        new JoystickButton(controller3, 2).whenPressed(()->hangSubsystem.setIdleMode(CANSparkMax.IdleMode.kBrake));
+        new JoystickButton(controller3, 3).whenPressed(()->hangSubsystem.setIdleMode(CANSparkMax.IdleMode.kCoast));
+
+//        new JoystickButton(controller3, 6).whenPressed(
+//                new SequentialCommandGroup(
+//                        new RotateToAngleCommand(shootSubsystem, 270),
+//                        new InstantCommand(hangSubsystem::extendSolenoid),
+//                        new DelayCommand(0.5),
+//                        new MoveToHangSetpointCommand(hangSubsystem, 60),
+//                        new InstantCommand(hangSubsystem::stopMotors),
+//                        new InstantCommand(hangSubsystem::resetEncoder)
+//                )
+//        );
+ //       new JoystickButton(controller3, 5).whenPressed(new InstantCommand(compressor::disable).andThen(new MoveToHangSetpointCommand(hangSubsystem, 110)).andThen(new MoveToHangSetpointCommand(hangSubsystem, 65)).andThen(new DelayCommand(0.5)).andThen(new MoveToHangSetpointCommand(hangSubsystem, 205)).andThen(new MoveToHangSetpointCommand(hangSubsystem, 165)).andThen(new DelayCommand(0)).andThen(new MoveToHangSetpointCommand(hangSubsystem, 200)));
     }
 
 
@@ -156,9 +184,11 @@ public class RobotContainer {
     }
 
     public void teleopInit() {
+        hangManager.setStep(-1);
         enableLimeLightLED();
         new ZeroShootAngleCommand(shootSubsystem).schedule();
         extraShootSpeed = 0;
+        hangFinished = false;
     }
 
     public void testInit() {
@@ -171,10 +201,13 @@ public class RobotContainer {
     public void disableInit() {
         disableLimeLightLED();
         shootController.setRumble(GenericHID.RumbleType.kLeftRumble, 0);
+        hangSubsystem.stopMotors();
+        hangSubsystem.stopSolenoid();
     }
 
     public void teleopPeriodic() {
         SmartDashboard.putNumber("Shoot Speed Offset", extraShootSpeed);
+        SmartDashboard.putBoolean("Command Finish", hangFinished);
     }
 
     private void handleColor() {

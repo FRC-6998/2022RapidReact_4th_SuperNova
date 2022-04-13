@@ -116,6 +116,9 @@ public class ShootSubsystem extends SubsystemBase {
         angleMotor.setSoftLimit(CANSparkMax.SoftLimitDirection.kForward, Constants.SOFT_LIMIT_FWD_SHOOT_ANGLE);
         angleMotor.enableSoftLimit(CANSparkMax.SoftLimitDirection.kForward, true);
 
+        //rotateMotor.getForwardLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyClosed).enableLimitSwitch(true);
+        //rotateMotor.getReverseLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyClosed).enableLimitSwitch(true);
+
 //        rotateMotor.setSoftLimit(CANSparkMax.SoftLimitDirection.kForward, Constants.SHOOT_MAX_ROTATE_ANGLE);
 //        rotateMotor.setSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, 0);
 //        rotateMotor.enableSoftLimit(CANSparkMax.SoftLimitDirection.kForward, true);
