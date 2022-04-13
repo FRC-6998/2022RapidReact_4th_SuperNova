@@ -29,7 +29,7 @@ public class MoveToHangSetpointCommand extends CommandBase {
     @Override
     public boolean isFinished() {
         // TODO: Make this return true when this Command no longer needs to run execute()
-        return Math.abs(hangSubsystem.getHangerPosition()-setpoint)<=2;
+        return Math.abs(hangSubsystem.getHangerPosition()-setpoint)<=1.6;
     }
 
     @Override

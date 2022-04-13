@@ -44,25 +44,25 @@ public class HangManager {
                 step = 2;
                 // go to 198° from vertical (mid+high)
                 return new SequentialCommandGroup(
-                        new MoveToHangSetpointCommand(hangSubsystem, 170),
+                        new MoveToHangSetpointCommand(hangSubsystem, 175),
                         new MoveToHangSetpointCommand(hangSubsystem, 150)
                 );
             case 2:
                 step = 4;
-                // go to 117° to unlock hook and then go to 369° from vertical (high+traversal)
+                // go to 117° to unlock hook and then go to 360° from vertical (high+traversal)
                 return new SequentialCommandGroup(
                         new MoveToHangSetpointCommand(hangSubsystem, 125),
-                        new MoveToHangSetpointCommand(hangSubsystem, 160),
                         new DelayCommand(1),
-                        new MoveToHangSetpointCommand(hangSubsystem, 270),
-                        new MoveToHangSetpointCommand(hangSubsystem, 250)
+                        new MoveToHangSetpointCommand(hangSubsystem, 160),
+                        new MoveToHangSetpointCommand(hangSubsystem, 275),
+                        new MoveToHangSetpointCommand(hangSubsystem, 255)
                 );
             case 3:
                 step = 4;
-                // go to 369° from vertical (high+traversal)
+                // go to 360° from vertical (high+traversal)
                 return new SequentialCommandGroup(
-                        new MoveToHangSetpointCommand(hangSubsystem, 265),
-                        new MoveToHangSetpointCommand(hangSubsystem, 250)
+                        new MoveToHangSetpointCommand(hangSubsystem, 275),
+                        new MoveToHangSetpointCommand(hangSubsystem, 255)
                 );
             case 4:
                 step = 6;

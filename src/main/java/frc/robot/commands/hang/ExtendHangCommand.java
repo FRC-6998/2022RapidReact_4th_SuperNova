@@ -33,7 +33,7 @@ public class ExtendHangCommand extends CommandBase {
 
     @Override
     public boolean isFinished() {
-        return Math.abs(hangSubsystem.getHangerPosition()-60)<=2 || timer.hasElapsed(5);
+        return Math.abs(hangSubsystem.getHangerPosition()-60)<=1.6 || timer.hasElapsed(5);
     }
 
     @Override
