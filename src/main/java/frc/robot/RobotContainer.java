@@ -124,14 +124,14 @@ public class RobotContainer {
 
         new JoystickButton(shootController, 8).whenPressed(new InstantCommand(()-> alignmentCommand.setAutoAlignment(!alignmentCommand.getAutoAlignment())));
 
-        new JoystickButton(controller3, 5).whenPressed(new InstantCommand(() -> {
+        new JoystickButton(driveController, 5).whenPressed(new InstantCommand(() -> {
             currentHangCommand.cancel();
             hangFinished = false;
             currentHangCommand = hangManager.prevCommand().withName("Hang");
             currentHangCommand.schedule();
         }));
 
-        new JoystickButton(controller3, 6).whenPressed(new InstantCommand(() -> {
+        new JoystickButton(driveController, 6).whenPressed(new InstantCommand(() -> {
             if (hangManager.getStep() == -1 || hangFinished){
                 hangFinished = false;
                 currentHangCommand = hangManager.nextCommand().withName("Hang");

@@ -91,7 +91,7 @@ public class AlignmentCommand extends CommandBase {
             //TODO y-axis
 
             if (shootEnabled) {
-                double rpm = 31.381 * targetDistance * targetDistance + 113.69 * targetDistance + 2867.2 + extraRPM;
+                double rpm = 31.381 * targetDistance * targetDistance + 160 * targetDistance + 2950 + extraRPM;
                 shootSubsystem.setShootMotorsVelocity(rpm);
                 if (DriverStation.isTeleopEnabled() && Math.abs(shootSubsystem.getShootMotorsVelocity() - rpm) <= 100) {
                     shootController.setRumble(GenericHID.RumbleType.kLeftRumble, 1);

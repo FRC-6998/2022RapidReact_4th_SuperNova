@@ -34,7 +34,7 @@ public class PathManager {
                                 new RunTrajectoryCommand(driveSubsystem, TrajectoryGenerator.generateTrajectory(
                                         new Pose2d(0, 0, Rotation2d.fromDegrees(0)),
                                         new ArrayList<>(),
-                                        new Pose2d(2.05, 1.2, Rotation2d.fromDegrees(0)),
+                                        new Pose2d(2.15, 1.4, Rotation2d.fromDegrees(0)),
                                         // Pass config
                                         new TrajectoryConfig(4, 1)
                                                 // Add kinematics to ensure max speed is actually obeyed
@@ -47,11 +47,15 @@ public class PathManager {
                                 new InstantCommand(()-> shootSubsystem.setTransferMotorVelocity(0)),
                                 new InstantCommand(collectSubsystem::enableIntake),
                                 new RunTrajectoryCommand(driveSubsystem, TrajectoryGenerator.generateTrajectory(
-                                        new Pose2d(2.05, 1.2, Rotation2d.fromDegrees(0)),
+                                        new Pose2d(2.15, 1.4, Rotation2d.fromDegrees(0)),
                                         new ArrayList<>(),
-                                        new Pose2d(5.25, 1.1, Rotation2d.fromDegrees(20)),
+                                        new Pose2d(5.35, 1.4, Rotation2d.fromDegrees(20)),
                                         // Pass config
-                                        new TrajectoryConfig(4, 1)
+                                        new TrajectoryConfig(
+
+
+
+                                                4, 1)
                                                 // Add kinematics to ensure max speed is actually obeyed
                                                 .setKinematics(DriveSubsystem.getKinematics())
                                 )),

@@ -28,8 +28,8 @@ public final class Constants {
     public static final int MOTOR_HANG_LEFT = 5;
     public static final int MOTOR_HANG_RIGHT = 6;
     // Shoot
-    public static final int MOTOR_SHOOT_MAIN_UP = 11;
-    public static final int MOTOR_SHOOT_MAIN_DOWN = 12;
+    public static final int MOTOR_SHOOT_MAIN_UP = 12;
+    public static final int MOTOR_SHOOT_MAIN_DOWN = 11;
     public static final int MOTOR_SHOOT_ROTATE = 10;
     public static final int MOTOR_SHOOT_ANGLE = 11;
     public static final int MOTOR_SHOOT_TRIGGER = 7;
@@ -63,8 +63,8 @@ public final class Constants {
     // Solenoid channel constants
     public static final int SOLENOID_HANG_FORWARD = 1;
     public static final int SOLENOID_HANG_REVERSE = 0;
-    public static final int SOLENOID_INTAKE_FORWARD = 4;
-    public static final int SOLENOID_INTAKE_REVERSE = 5;
+    public static final int SOLENOID_INTAKE_FORWARD = 6;
+    public static final int SOLENOID_INTAKE_REVERSE = 7;
 
     // Chassis constants
     public static final boolean ENABLE_FOD = true;
@@ -78,7 +78,7 @@ public final class Constants {
     public static final CANSparkMax.IdleMode IDLE_MODE = CANSparkMax.IdleMode.kCoast;
 
     // FeedForward constants for motors
-    public static final double FF_SHOOT_MAIN = 0.051;
+    public static final double FF_SHOOT_MAIN = 0.0515;
     public static final double FF_SHOOT_ROTATE = 0.00479; // velocity p=0.001 maxV=200 maxA=175
     public static final double FF_SHOOT_ANGLE = 0.000093;
     public static final double FF_SHOOT_TRIGGER = 0.000089661;
