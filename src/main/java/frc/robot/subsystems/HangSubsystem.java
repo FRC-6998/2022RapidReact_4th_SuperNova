@@ -6,14 +6,19 @@ import com.revrobotics.CANSparkMaxLowLevel;
 import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Robot;
+import frc.robot.RobotContainer;
 
 public class HangSubsystem extends SubsystemBase {
     private final CANSparkMax leftHangMotor = new CANSparkMax(Constants.MOTOR_HANG_LEFT, CANSparkMaxLowLevel.MotorType.kBrushless);
     private final CANSparkMax rightHangMotor = new CANSparkMax(Constants.MOTOR_HANG_RIGHT, CANSparkMaxLowLevel.MotorType.kBrushless);
     private final DoubleSolenoid doubleSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, Constants.SOLENOID_HANG_FORWARD, Constants.SOLENOID_HANG_REVERSE);
+    private boolean hangEnable = false;
+    private Timer timer = new Timer();
 
     public HangSubsystem() {
         // Factory reset motors
@@ -51,6 +56,9 @@ public class HangSubsystem extends SubsystemBase {
 
         leftHangMotor.set(0);
         rightHangMotor.set(0);
+
+        hangEnable = false;
+        timer.reset();
     }
 
     @Override
@@ -61,6 +69,12 @@ public class HangSubsystem extends SubsystemBase {
             SmartDashboard.putNumber("New HangSubsystem Left Position", leftHangMotor.getEncoder().getPosition());
             SmartDashboard.putNumber("New HangSubsystem Right Position", rightHangMotor.getEncoder().getPosition());
         }
+        if (timer.hasElapsed(90)){
+            hangEnable = true;
+            timer.stop();
+        }
+
+        SmartDashboard.putBoolean("Hang Enable",hangEnable);
     }
 
     public void resetEncoder(){
@@ -107,5 +121,18 @@ public class HangSubsystem extends SubsystemBase {
     public void setIdleMode(CANSparkMax.IdleMode mode){
         leftHangMotor.setIdleMode(mode);
         rightHangMotor.setIdleMode(mode);
+    }
+
+    public boolean getHangerEnable(){
+        return hangEnable;
+    }
+    public void setHangerEnable(boolean enable){
+        hangEnable = enable;
+    }
+    public void startTimer(){
+        timer.start();
+    }
+    public void resetTimer(){
+        timer.reset();
     }
 }

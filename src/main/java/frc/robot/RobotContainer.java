@@ -109,7 +109,7 @@ public class RobotContainer {
 
         // use window or menu button on drive controller to reset chassis heading
         new JoystickButton(driveController, 7).whenPressed(new InstantCommand(drive::resetYaw));
-        new JoystickButton(driveController, 8).whenPressed(new InstantCommand(drive::resetYaw));
+//        new JoystickButton(driveController, 8).whenPressed(new InstantCommand(drive::resetYaw));
 
 
         // use pov on shoot controller to adjust speed and rotation offset
@@ -131,11 +131,14 @@ public class RobotContainer {
             currentHangCommand.schedule();
         }));
 
+        new JoystickButton(driveController,8).whenPressed(new InstantCommand(() -> hangSubsystem.setHangerEnable(!hangSubsystem.getHangerEnable())));
         new JoystickButton(driveController, 6).whenPressed(new InstantCommand(() -> {
-            if (hangManager.getStep() == -1 || hangFinished){
-                hangFinished = false;
-                currentHangCommand = hangManager.nextCommand().withName("Hang");
-                currentHangCommand.schedule();
+            if (hangSubsystem.getHangerEnable()){
+                if (hangManager.getStep() == -1 || hangFinished){
+                    hangFinished = false;
+                    currentHangCommand = hangManager.nextCommand().withName("Hang");
+                    currentHangCommand.schedule();
+                }
             }
         }));
 
@@ -189,6 +192,8 @@ public class RobotContainer {
         new ZeroShootAngleCommand(shootSubsystem).schedule();
         extraShootSpeed = 0;
         hangFinished = false;
+        hangSubsystem.startTimer();
+        hangSubsystem.setHangerEnable(false);
     }
 
     public void testInit() {
@@ -203,6 +208,8 @@ public class RobotContainer {
         shootController.setRumble(GenericHID.RumbleType.kLeftRumble, 0);
         hangSubsystem.stopMotors();
         hangSubsystem.stopSolenoid();
+        hangSubsystem.resetTimer();
+        hangSubsystem.setHangerEnable(false);
     }
 
     public void teleopPeriodic() {
