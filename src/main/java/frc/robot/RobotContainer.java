@@ -49,7 +49,7 @@ public class RobotContainer {
     // Auto Path Chooser
     private final SendableChooser<String> pathChooser = new SendableChooser<>();
 
-    private final AlignmentCommand alignmentCommand = new AlignmentCommand(shootSubsystem, drive, collectSubsystem, shootController);
+    private final AlignmentCommand alignmentCommand = new AlignmentCommand(shootSubsystem, drive, collectSubsystem, shootController,driveController);
 
     private final HangManager hangManager = new HangManager(hangSubsystem, shootSubsystem);
 
@@ -64,6 +64,7 @@ public class RobotContainer {
 
     public static final String AUTO_FOUR_BALL = "4 Ball Auto";
     public static final String AUTO_TWO_BALL = "2 Ball Auto";
+    public static final String AUTO_TWO_BALL_DEFENSE = "2 Ball Auto(Defense)";
 
     private double extraShootSpeed = 0;
     private double rotateOffset = 0;
@@ -83,10 +84,11 @@ public class RobotContainer {
         // Add path options and send to the dashboard
         pathChooser.setDefaultOption("4 Ball Auto", AUTO_FOUR_BALL);
         pathChooser.addOption("2 Ball Auto", AUTO_TWO_BALL);
+        pathChooser.addOption("2 Ball Auto(Defense)", AUTO_TWO_BALL_DEFENSE);
         SmartDashboard.putData("Auto choices", pathChooser);
 
         drive.setDefaultCommand(new MecanumDriveCommand(drive, driveController));
-        collectSubsystem.setDefaultCommand(new IntakeCommand(collectSubsystem, driveController, shootController));
+        //collectSubsystem.setDefaultCommand(new IntakeCommand(collectSubsystem, driveController, shootController));
         shootSubsystem.setDefaultCommand(alignmentCommand);
 
         CommandScheduler.getInstance().onCommandFinish(command -> {
@@ -121,6 +123,8 @@ public class RobotContainer {
                 .whenPressed(new InstantCommand(() -> alignmentCommand.setExtraRPM(alignmentCommand.getExtraRPM()-50)));
         new POVButton(shootController, 270)
                 .whenPressed(new InstantCommand(() -> alignmentCommand.setXOffset(alignmentCommand.getXOffset()-1)));
+        new JoystickButton(shootController, 1)
+                .whenPressed(new InstantCommand(()->alignmentCommand.setExtraRPM(0)));
 
         new JoystickButton(shootController, 8).whenPressed(new InstantCommand(()-> alignmentCommand.setAutoAlignment(!alignmentCommand.getAutoAlignment())));
 
@@ -156,6 +160,35 @@ public class RobotContainer {
 //                )
 //        );
  //       new JoystickButton(controller3, 5).whenPressed(new InstantCommand(compressor::disable).andThen(new MoveToHangSetpointCommand(hangSubsystem, 110)).andThen(new MoveToHangSetpointCommand(hangSubsystem, 65)).andThen(new DelayCommand(0.5)).andThen(new MoveToHangSetpointCommand(hangSubsystem, 205)).andThen(new MoveToHangSetpointCommand(hangSubsystem, 165)).andThen(new DelayCommand(0)).andThen(new MoveToHangSetpointCommand(hangSubsystem, 200)));
+
+        new JoystickButton(driveController, 2).whenPressed(new InstantCommand(() -> {
+            if (!collectSubsystem.isIntakeEnabled()){
+                collectSubsystem.enableIntake();
+            }else{
+                collectSubsystem.disableIntake();
+            }
+        }));
+
+        new JoystickButton(driveController, 3).whenPressed(new InstantCommand(() -> {
+            if (!collectSubsystem.isIntakeEnabled()){
+                collectSubsystem.enableIntake(true);
+            }else{
+                collectSubsystem.disableIntake();
+            }
+        }));
+
+        new JoystickButton(shootController, 2).whenPressed(new InstantCommand(() -> {
+            if (!collectSubsystem.isIntakeEnabled()){
+                collectSubsystem.enableIntake();
+            }else{
+                collectSubsystem.disableIntake();
+            }
+        }));
+
+        new JoystickButton(shootController, 3).whenPressed(new InstantCommand(() -> {
+
+                collectSubsystem.enableIntake(true);
+        })).whenReleased(collectSubsystem::disableIntake);
     }
 
 
@@ -167,9 +200,11 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         switch (pathChooser.getSelected()){
             case AUTO_FOUR_BALL:
-                return PathManager.getFourBallAuto(drive, shootSubsystem, collectSubsystem, shootController);
+                return PathManager.getFourBallAuto(drive, shootSubsystem, collectSubsystem, shootController,driveController);
             case AUTO_TWO_BALL:
-                return PathManager.getTwoBallAuto(drive, shootSubsystem, collectSubsystem, shootController);
+                return PathManager.getTwoBallAuto(drive, shootSubsystem, collectSubsystem, shootController,driveController);
+            case AUTO_TWO_BALL_DEFENSE:
+                return PathManager.getTwoBallDefenseAuto(drive, shootSubsystem, collectSubsystem, shootController,driveController);
             default:
                 break;
         }

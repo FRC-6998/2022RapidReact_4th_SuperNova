@@ -84,6 +84,7 @@ public final class Constants {
     public static final double FF_SHOOT_TRIGGER = 0.000089661;
     public static final double FF_SHOOT_TRANSFER = 0.00017696;
     public static final double FF_HANG = 0.002;
+    public static final double FF_INTAKE = 0.000934;
     public static final double FF_CHASSIS_KS = 0.15085;
     public static final double FF_CHASSIS_KV = 3.7072; // unit is voltage/meter per second
     public static final double FF_CHASSIS_KA = 0.34931; // unit is voltage/meter per second^2
@@ -96,6 +97,7 @@ public final class Constants {
     public static final double[] PID_SHOOT_ANGLE = {0.00007, 0, 0};
     public static final double[] PID_SHOOT_TRIGGER = {0, 0, 0};
     public static final double[] PID_SHOOT_TRANSFER = {0, 0, 0};
+    public static final double[] PID_INTAKE = {0.0008, 0, 0};
 
     // Smart Motion
     public static final double SMART_MOTION_MAX_VELOCITY_SHOOT_ROTATE = 200;
@@ -108,7 +110,7 @@ public final class Constants {
     // Auto alignment
     public static final double AUTO_ALIGNMENT_MOUNT_ANGLE = 20;
     public static final double AUTO_ALIGNMENT_LENS_HEIGHT_METER = 0.95;
-    public static final double AUTO_ALIGNMENT_GOAL_HEIGHT_METER = 2.5;
+    public static final double AUTO_ALIGNMENT_GOAL_HEIGHT_METER = 2.3;
 
     public static final float SHOOT_MAX_ROTATE_ANGLE = 310;
 

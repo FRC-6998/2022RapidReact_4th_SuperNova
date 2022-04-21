@@ -19,8 +19,8 @@ import frc.robot.subsystems.ShootSubsystem;
 import java.util.ArrayList;
 
 public class PathManager {
-    public static Command getFourBallAuto(DriveSubsystem driveSubsystem, ShootSubsystem shootSubsystem, CollectSubsystem collectSubsystem, XboxController shootController){
-        AlignmentCommand autoAlignmentCommand = new AlignmentCommand(shootSubsystem, driveSubsystem, collectSubsystem, shootController);
+    public static Command getFourBallAuto(DriveSubsystem driveSubsystem, ShootSubsystem shootSubsystem, CollectSubsystem collectSubsystem, XboxController shootController, XboxController driveController){
+        AlignmentCommand autoAlignmentCommand = new AlignmentCommand(shootSubsystem, driveSubsystem, collectSubsystem, shootController, driveController);
         autoAlignmentCommand.setAutoModeEnableShoot(true);
         return new SequentialCommandGroup(
                 new ParallelCommandGroup(
@@ -49,12 +49,9 @@ public class PathManager {
                                 new RunTrajectoryCommand(driveSubsystem, TrajectoryGenerator.generateTrajectory(
                                         new Pose2d(2.15, 1.4, Rotation2d.fromDegrees(0)),
                                         new ArrayList<>(),
-                                        new Pose2d(5.35, 1.4, Rotation2d.fromDegrees(20)),
+                                        new Pose2d(5.6, 1.5, Rotation2d.fromDegrees(20)),
                                         // Pass config
                                         new TrajectoryConfig(
-
-
-
                                                 4, 1)
                                                 // Add kinematics to ensure max speed is actually obeyed
                                                 .setKinematics(DriveSubsystem.getKinematics())
@@ -96,29 +93,59 @@ public class PathManager {
         );
     }
 
-    public static Command getTwoBallAuto(DriveSubsystem driveSubsystem, ShootSubsystem shootSubsystem, CollectSubsystem collectSubsystem, XboxController shootController){
-        AlignmentCommand autoAlignmentCommand = new AlignmentCommand(shootSubsystem, driveSubsystem, collectSubsystem, shootController);
+    public static Command getTwoBallAuto(DriveSubsystem driveSubsystem, ShootSubsystem shootSubsystem, CollectSubsystem collectSubsystem, XboxController shootController, XboxController driveController){
+        AlignmentCommand autoAlignmentCommand = new AlignmentCommand(shootSubsystem, driveSubsystem, collectSubsystem, shootController, driveController);
         autoAlignmentCommand.setAutoModeEnableShoot(true);
         return new SequentialCommandGroup(
                 new ParallelCommandGroup(
                         new SequentialCommandGroup(
                                 new ZeroShootAngleCommand(shootSubsystem),
-                                new RotateToAngleCommand(shootSubsystem, 75),
+                                new RotateToAngleCommand(shootSubsystem, 90),
                                 autoAlignmentCommand
                         ),
                         new SequentialCommandGroup(
                                 new InstantCommand(collectSubsystem::enableIntake),
+                                new DelayCommand(2),
                                 new RunTrajectoryCommand(driveSubsystem, TrajectoryGenerator.generateTrajectory(
                                         new Pose2d(0, 0, Rotation2d.fromDegrees(0)),
                                         new ArrayList<>(),
-                                        new Pose2d(1, 0, Rotation2d.fromDegrees(0)),
+                                        new Pose2d(1.5, 0, Rotation2d.fromDegrees(0)),
                                         // Pass config
-                                        new TrajectoryConfig(4, 1)
+                                        new TrajectoryConfig(3, 1)
                                                 // Add kinematics to ensure max speed is actually obeyed
                                                 .setKinematics(DriveSubsystem.getKinematics())
                                 )),
                                 new InstantCommand(collectSubsystem::disableIntake),
-                                new DelayCommand(0.4),
+                                new DelayCommand(1),
+                                new InstantCommand(() -> shootSubsystem.setTransferMotorVelocity(1500)),
+                                new DelayCommand(4),
+                                new InstantCommand(()-> shootSubsystem.setTransferMotorVelocity(0))
+                        )
+                )
+        );
+    }
+
+    public static Command getTwoBallDefenseAuto(DriveSubsystem driveSubsystem, ShootSubsystem shootSubsystem, CollectSubsystem collectSubsystem, XboxController shootController, XboxController driveController){
+        AlignmentCommand autoAlignmentCommand = new AlignmentCommand(shootSubsystem, driveSubsystem, collectSubsystem, shootController, driveController);
+        autoAlignmentCommand.setAutoModeEnableShoot(true);
+        return new SequentialCommandGroup(
+                new ParallelCommandGroup(
+                        new SequentialCommandGroup(
+                                new ZeroShootAngleCommand(shootSubsystem),
+                                new RotateToAngleCommand(shootSubsystem, 90),
+                                autoAlignmentCommand
+                        ),
+                        new SequentialCommandGroup(
+                                new RunTrajectoryCommand(driveSubsystem, TrajectoryGenerator.generateTrajectory(
+                                        new Pose2d(0, 0, Rotation2d.fromDegrees(0)),
+                                        new ArrayList<>(),
+                                        new Pose2d(1.8, 0, Rotation2d.fromDegrees(0)),
+                                        // Pass config
+                                        new TrajectoryConfig(3, 1)
+                                                // Add kinematics to ensure max speed is actually obeyed
+                                                .setKinematics(DriveSubsystem.getKinematics())
+                                )),
+                                new DelayCommand(1),
                                 new InstantCommand(() -> shootSubsystem.setTransferMotorVelocity(1500)),
                                 new DelayCommand(4),
                                 new InstantCommand(()-> shootSubsystem.setTransferMotorVelocity(0))

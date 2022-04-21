@@ -91,6 +91,10 @@ public class HangManager {
                 return new SequentialCommandGroup(
                         new MoveToHangSetpointCommand(hangSubsystem, 60)
                 );
+            case 2:
+                return new SequentialCommandGroup(
+                        new MoveToHangSetpointCommand(hangSubsystem, 125)
+                );
             default:
                 break;
         }
